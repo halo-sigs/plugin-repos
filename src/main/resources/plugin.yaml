@@ -1,22 +1,17 @@
 apiVersion: plugin.halo.run/v1alpha1
 kind: Plugin
 metadata:
-  # The name defines how the plugin is invoked,A unique name
-  name: PluginStarter
+  name: plugin-repos
 spec:
   enabled: true
-  # 'version' is a valid semantic version string (see semver.org).
-  version: 1.0.0-SNAPSHOT
   requires: ">=2.5.0"
   author:
     name: Halo OSS Team
     website: https://github.com/halo-dev
   logo: https://halo.run/logo
-  # 'homepage' usually links to the GitHub repository of the plugin
-  homepage: https://github.com/halo-dev/plugin-starter
-  # 'displayName' explains what the plugin does in only a few words
-  displayName: "插件快速开始模板"
-  description: "这是一个插件快速开始模板"
+  homepage: https://github.com/halo-sigs/plugin-repos
+  displayName: "Repository Manager"
+  description: "Fetch and manage repositories from popular code hosting platforms."
   license:
     - name: "GPL-3.0"
       url: "https://github.com/halo-dev/plugin-starter/blob/main/LICENSE"
