@@ -2,6 +2,7 @@ package run.halo.repo;
 
 import org.pf4j.PluginWrapper;
 import org.springframework.stereotype.Component;
+import run.halo.app.extension.SchemeManager;
 import run.halo.app.plugin.BasePlugin;
 
 /**
@@ -13,17 +14,22 @@ import run.halo.app.plugin.BasePlugin;
 @Component
 public class RepoPlugin extends BasePlugin {
 
-    public RepoPlugin(PluginWrapper wrapper) {
+    private final SchemeManager schemeManager;
+
+    public RepoPlugin(PluginWrapper wrapper, SchemeManager schemeManager) {
         super(wrapper);
+        this.schemeManager = schemeManager;
     }
 
     @Override
     public void start() {
-        System.out.println("插件启动成功！");
+        schemeManager.register(Repository.class);
+        schemeManager.register(RepositoryRegistry.class);
     }
 
     @Override
     public void stop() {
-        System.out.println("插件停止！");
+        schemeManager.unregister(schemeManager.get(Repository.class));
+        schemeManager.unregister(schemeManager.get(RepositoryRegistry.class));
     }
 }

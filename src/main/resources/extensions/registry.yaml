@@ -1,0 +1,20 @@
+apiVersion: repo.halo.run/v1alpha1
+kind: RepositoryRegistry
+metadata:
+  name: registry-github-guqing
+spec:
+  type: user
+  owner: guqing
+  tokenSecretRef:
+    secretName: plugin-repos-registry-github-token
+    secretKey: token
+  platform: github
+
+---
+apiVersion: v1alpha1
+kind: Secret
+metadata:
+  name: plugin-repos-registry-github-token
+type: Opaque
+data:
+  token: "<your-base64-github-pat>"

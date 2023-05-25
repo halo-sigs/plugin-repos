@@ -1,0 +1,38 @@
+package run.halo.repo;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import run.halo.app.extension.AbstractExtension;
+import run.halo.app.extension.GVK;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+@GVK(group = "repo.halo.run", version = "v1alpha1",
+    kind = "RepositoryRegistry", singular = "repositoryregistry", plural = "repositoryregistries")
+public class RepositoryRegistry extends AbstractExtension {
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private RegistrySpec spec;
+
+    @Data
+    public static class RegistrySpec {
+        // guqing
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minLength = 1)
+        private String owner;
+        // github
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minLength = 1)
+        private String platform;
+
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minLength = 1)
+        private String type;
+
+        private TokenSecretRef tokenSecretRef;
+    }
+
+    @Data
+    public static class TokenSecretRef {
+        private String secretName;
+        private String secretKey;
+    }
+}

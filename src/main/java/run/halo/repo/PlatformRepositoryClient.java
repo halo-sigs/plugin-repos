@@ -4,5 +4,5 @@ import reactor.core.publisher.Flux;
 
 public interface PlatformRepositoryClient {
 
-    Flux<Repository> listRepos();
+    Flux<Repository> listRepos(RepositoryRegistry registry);
 }

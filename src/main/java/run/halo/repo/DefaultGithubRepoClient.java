@@ -32,8 +32,8 @@ public class DefaultGithubRepoClient implements GithubRepoClient {
             .bodyToFlux(ObjectNode.class);
     }
 
-    private String getRepoUrl(String owner, GithubRepoListRequest.RepoType token) {
-        return switch (token) {
+    private String getRepoUrl(String owner, RepoOwnerType type) {
+        return switch (type) {
             case USER -> GITHUB_API_URL + "/users/" + owner + "/repos";
             case ORG -> GITHUB_API_URL + "/orgs/" + owner + "/repos";
         };

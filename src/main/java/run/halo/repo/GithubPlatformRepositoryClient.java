@@ -1,21 +1,49 @@
 package run.halo.repo;
 
+import static org.apache.commons.lang3.BooleanUtils.isFalse;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Instant;
+import java.util.Base64;
+import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import run.halo.app.extension.Metadata;
+import run.halo.app.extension.ReactiveExtensionClient;
+import run.halo.app.extension.Secret;
 
 @Component
+@RequiredArgsConstructor
 public class GithubPlatformRepositoryClient implements PlatformRepositoryClient {
     private final GithubRepoClient repoClient = new DefaultGithubRepoClient();
 
+    private final ReactiveExtensionClient client;
+
     @Override
-    public Flux<Repository> listRepos() {
-        // TODO build query parameters here
-        return repoClient.listRepos(null)
-            .map(this::mapToRepository);
+    public Flux<Repository> listRepos(RepositoryRegistry registry) {
+        return Mono.fromSupplier(() -> GithubRepoListRequest.builder()
+                .type(RepoOwnerType.convertFrom(registry.getSpec().getType()))
+                .owner(registry.getSpec().getOwner())
+            )
+            .flatMap(builder -> {
+                if (registry.getSpec().getTokenSecretRef() == null) {
+                    return Mono.just(builder);
+                }
+                return client.fetch(Secret.class,
+                        registry.getSpec().getTokenSecretRef().getSecretName())
+                    .filter(secret -> secret.getData() != null)
+                    .map(secret -> {
+                        byte[] tokenBytes = secret.getData()
+                            .get(registry.getSpec().getTokenSecretRef().getSecretKey());
+                        return builder.token(new String(tokenBytes));
+                    })
+                    .defaultIfEmpty(builder);
+            })
+            .flatMapMany(builder -> repoClient.listRepos(builder.build())
+                .map(this::mapToRepository)
+            );
     }
 
     private Repository mapToRepository(@NonNull ObjectNode githubRepo) {
@@ -35,7 +63,7 @@ public class GithubPlatformRepositoryClient implements PlatformRepositoryClient 
         spec.setWatchersCount(githubRepo.get("watchers_count").asInt());
         spec.setLanguage(githubRepo.get("language").textValue());
         spec.setPlatformName("github");
-        spec.setVisibility(githubRepo.get("private").asBoolean());
+        spec.setVisibility(isFalse(githubRepo.get("private").asBoolean()));
         spec.setUpdatedAt(Instant.parse(githubRepo.get("updated_at").textValue()));
         spec.setOpenIssuesCount(githubRepo.get("open_issues_count").asInt());
 

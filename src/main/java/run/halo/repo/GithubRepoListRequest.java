@@ -7,11 +7,6 @@ import lombok.Data;
 @Builder
 public class GithubRepoListRequest {
     private String owner;
-    private RepoType type;
+    private RepoOwnerType type;
     private String token;
-
-    public enum RepoType {
-        USER,
-        ORG
-    }
 }

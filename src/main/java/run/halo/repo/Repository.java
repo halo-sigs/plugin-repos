@@ -10,7 +10,7 @@ import run.halo.app.extension.GVK;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @GVK(group = "repo.halo.run", version = "v1alpha1",
-    kind = "Repo", singular = "repo", plural = "repos")
+    kind = "Repository", singular = "repository", plural = "repositories")
 public class Repository extends AbstractExtension {
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
