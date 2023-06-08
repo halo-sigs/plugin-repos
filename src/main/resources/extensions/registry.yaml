@@ -16,5 +16,5 @@ kind: Secret
 metadata:
   name: plugin-repos-registry-github-token
 type: Opaque
-data:
-  token: "<your-base64-github-pat>"
+stringData:
+  token: "<your github token>"

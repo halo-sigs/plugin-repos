@@ -33,11 +33,11 @@ public class GithubPlatformRepositoryClient implements PlatformRepositoryClient 
                 }
                 return client.fetch(Secret.class,
                         registry.getSpec().getTokenSecretRef().getSecretName())
-                    .filter(secret -> secret.getData() != null)
+                    .filter(secret -> secret.getStringData() != null)
                     .map(secret -> {
-                        byte[] tokenBytes = secret.getData()
+                        String value = secret.getStringData()
                             .get(registry.getSpec().getTokenSecretRef().getSecretKey());
-                        return builder.token(new String(tokenBytes));
+                        return builder.token(value);
                     })
                     .defaultIfEmpty(builder);
             })
