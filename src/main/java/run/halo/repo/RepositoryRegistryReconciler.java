@@ -3,9 +3,11 @@ package run.halo.repo;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import run.halo.app.extension.ExtensionClient;
 import run.halo.app.extension.controller.Controller;
@@ -31,17 +33,16 @@ public class RepositoryRegistryReconciler implements Reconciler<Reconciler.Reque
                 if (platformEnum == null) {
                     return;
                 }
-                RepositoryRegistry.RegistryStatus status =
-                    RepositoryRegistry.nullSafeStatus(registry);
-                status.setPhase(RepositoryRegistry.RegistryPhase.PENDING);
-                nullSafeConditions(registry).
-                    addAndEvictFIFO(Condition.builder()
-                        .type("Pending")
-                        .reason("Pending")
-                        .status(ConditionStatus.TRUE)
-                        .message("Pending to sync repositories from platform")
-                        .build());
-                updateStatus(registry);
+                RepositoryRegistry.nullSafeStatus(registry)
+                    .setPhase(RepositoryRegistry.RegistryPhase.PENDING);
+                nullSafeConditions(registry).addAndEvictFIFO(Condition.builder()
+                    .type("Pending")
+                    .reason("Pending")
+                    .status(ConditionStatus.TRUE)
+                    .lastTransitionTime(Instant.now())
+                    .message("Pending to sync repositories from platform")
+                    .build());
+                updateStatus(request.name(), registry.getStatus());
 
                 try {
                     PlatformRepositoryClient repoClient =
@@ -58,23 +59,29 @@ public class RepositoryRegistryReconciler implements Reconciler<Reconciler.Reque
                             .forEach(client::create);
                     }
                 } catch (Exception e) {
+                    RepositoryRegistry.nullSafeStatus(registry)
+                        .setPhase(RepositoryRegistry.RegistryPhase.FAILED);
                     nullSafeConditions(registry).addAndEvictFIFO(Condition.builder()
                         .type("Failed")
                         .reason("Failed")
                         .status(ConditionStatus.FALSE)
-                        .message("Failed to sync repositories from platform")
+                        .lastTransitionTime(Instant.now())
+                        .message(StringUtils.defaultString(e.getMessage()))
                         .build());
-                    updateStatus(registry);
-                    return;
+                    updateStatus(request.name(), registry.getStatus());
+                    throw new RuntimeException(e);
                 }
 
+                RepositoryRegistry.nullSafeStatus(registry)
+                    .setPhase(RepositoryRegistry.RegistryPhase.SUCCEEDED);
                 nullSafeConditions(registry).addAndEvictFIFO(Condition.builder()
                     .type("Success")
                     .reason("Success")
                     .status(ConditionStatus.TRUE)
+                    .lastTransitionTime(Instant.now())
                     .message("Sync repositories successfully")
                     .build());
-                updateStatus(registry);
+                updateStatus(request.name(), registry.getStatus());
             });
         return new Result(true, Duration.ofDays(10));
     }
@@ -85,16 +92,17 @@ public class RepositoryRegistryReconciler implements Reconciler<Reconciler.Reque
         ConditionList conditions = status.getConditions();
         if (conditions == null) {
             conditions = new ConditionList();
+            status.setConditions(conditions);
         }
         return conditions;
     }
 
-    private void updateStatus(RepositoryRegistry oldRegistry) {
-        client.fetch(RepositoryRegistry.class, oldRegistry.getMetadata().getName())
+    private void updateStatus(String name, RepositoryRegistry.RegistryStatus newStatus) {
+        client.fetch(RepositoryRegistry.class, name)
             .ifPresent(registry -> {
-                RepositoryRegistry.RegistryStatus oldStatus = oldRegistry.getStatus();
-                registry.setStatus(oldRegistry.getStatus());
-                if (oldStatus != registry.getStatus()) {
+                RepositoryRegistry.RegistryStatus oldStatus = registry.getStatus();
+                registry.setStatus(newStatus);
+                if (oldStatus != newStatus) {
                     client.update(registry);
                 }
             });
