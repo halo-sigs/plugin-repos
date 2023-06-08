@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import run.halo.app.extension.AbstractExtension;
 import run.halo.app.extension.GVK;
+import run.halo.app.infra.ConditionList;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -14,6 +15,8 @@ public class RepositoryRegistry extends AbstractExtension {
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private RegistrySpec spec;
+
+    private RegistryStatus status;
 
     @Data
     public static class RegistrySpec {
@@ -28,6 +31,27 @@ public class RepositoryRegistry extends AbstractExtension {
         private String type;
 
         private TokenSecretRef tokenSecretRef;
+    }
+
+    public static RegistryStatus nullSafeStatus(RepositoryRegistry registry) {
+        RegistryStatus status = registry.getStatus();
+        if (status == null) {
+            status = new RegistryStatus();
+            registry.setStatus(status);
+        }
+        return status;
+    }
+
+    @Data
+    public static class RegistryStatus {
+        private RegistryPhase phase;
+        private ConditionList conditions;
+    }
+
+    public enum RegistryPhase {
+        PENDING,
+        FAILED,
+        SUCCEEDED
     }
 
     @Data
